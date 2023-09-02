@@ -1,41 +1,38 @@
-import React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const App = () => {
-  const [message, setMessage] = React.useState<string>();
-  const socketRef = React.useRef<WebSocket>();
+function App() {
+  const [message, setMessage] = useState('');
+  const webSocketRef = useRef<WebSocket>();
 
-  // #0.WebSocket関連の処理は副作用なので、useEffect内で実装
-  React.useEffect(() => {
-    // #1.WebSocketオブジェクトを生成しサーバとの接続を開始
-    const websocket = new WebSocket('ws://localhost:5000');
-    socketRef.current = websocket;
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:5000');
+    webSocketRef.current = socket;
 
-    // #2.メッセージ受信時のイベントハンドラを設定
-    const onMessage = (event: MessageEvent<string>) => {
+    socket.addEventListener('message', (event) => {
       setMessage(event.data);
-    };
-    websocket.addEventListener('message', onMessage);
+    });
 
-    // #3.useEffectのクリーンアップの中で、WebSocketのクローズ処理を実行
-    return () => {
-      websocket.close();
-      websocket.removeEventListener('message', onMessage);
-    };
+    return () => socket.close();
   }, []);
 
-  return (
-    <>
-      <div>最後に受信したメッセージ: {message}</div>
-      <button
-        type="button"
-        onClick={() => {
-          // #4.WebSocketでメッセージを送信する場合は、イベントハンドラ内でsendメソッドを実行
-          socketRef.current?.send('送信メッセージ');
-        }}
-      >
-        送信
-      </button>
-    </>
+  const [inputText, setInputText] = useState('');
+  const submit: React.FormEventHandler = useCallback(
+    (event) => {
+      event.preventDefault();
+      webSocketRef.current?.send(inputText);
+    },
+    [inputText]
   );
-};
+
+  return (
+    <div className="App">
+      <h1>{JSON.stringify(message)}</h1>
+      <form onSubmit={submit}>
+        <input value={inputText} onChange={(e) => setInputText(e.target.value)} />
+        <button>送信</button>
+      </form>
+    </div>
+  );
+}
+
 export default App;

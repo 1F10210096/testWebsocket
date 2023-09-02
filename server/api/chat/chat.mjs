@@ -7,15 +7,13 @@ const wss = new Server({ port: 5000 });
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
-  // クライアントからのメッセージを受信した時の処理
-  ws.on('message', (message) => {
-    console.log(`Received: ${message}`);
-    // クライアントにメッセージを送信
-    ws.send(`Server: ${message}`);
+  ws.on('message', (data, isBinary) => {
+    for (const client of wss.clients) {
+      if (client.readyState === ws.OPEN) {
+        client.send(data, { binary: isBinary });
+      }
+    }
   });
 
-  // クライアントが切断した時の処理
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
+  ws.on('close', () => console.log('closed!'));
 });
