@@ -1,0 +1,22 @@
+
+.shogi-board {
+  display: grid;
+  grid-template-columns: repeat(9, 40px); /* 9x9のグリッドを作成 */
+  grid-template-rows: repeat(9, 40px);
+  gap: 1px; /* マス目とマス目の間隔を調整 */
+  background-color: #ffcc66; /* 盤面の背景色を設定 */
+}
+
+.board-row {
+  display: flex;
+}
+
+.board-square {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #000; /* マス目の境界線を描画 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px; /* 文字サイズを調整 */
+}
