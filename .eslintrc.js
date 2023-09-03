@@ -40,7 +40,7 @@ module.exports = {
     complexity: ['error', 10],
     'max-depth': ['error', 2],
     'max-nested-callbacks': ['error', 3],
-    'max-lines': ['error', 200],
+    'max-lines': ['error', 300],
   },
   overrides: [
     {

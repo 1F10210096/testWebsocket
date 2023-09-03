@@ -17,6 +17,6 @@
     "target": "es6",
     "incremental": true
   },
-  "include": ["**/*.ts", "scripts/*.js", ".eslintrc.js", "api/chat/chat.mjs"],
+  "include": ["**/*.ts", "scripts/*.js", ".eslintrc.js", "api/chat/chat.ts","server/api/chat/*.mjs",],
   "exclude": ["node_modules"]
 }
