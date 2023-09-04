@@ -8,6 +8,7 @@ const API_ORIGIN = process.env.API_ORIGIN ?? '';
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? '';
 const FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST;
 const FIREBASE_SERVER_KEY = process.env.FIREBASE_SERVER_KEY ?? '';
+const SERVER_PORT = process.env.PORT ?? process.env.API_SERVER_PORT ?? '8080'
 
 export {
   API_BASE_PATH,
@@ -16,4 +17,5 @@ export {
   FIREBASE_AUTH_EMULATOR_HOST,
   FIREBASE_SERVER_KEY,
   PORT,
+  SERVER_PORT
 };
