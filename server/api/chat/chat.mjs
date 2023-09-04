@@ -1,27 +1,33 @@
 import http from 'http';
-import { Server } from 'socket.io';
-try {
-  const server = http.createServer();
-  const io = new Server(server, {
-    cors: {
-      origin: 'http://localhost:3000', // クライアントのオリジン
-      methods: ['GET', 'POST'], // 許可するHTTPメソッド
-    },
-  });
+import WebSocket from 'ws';
 
-  const port = 8000;
-  server.listen(port, () => {
-    console.log('Listening on port 8000...');
+const server = http.createServer((req, res) => {
+  // HTTPサーバーの設定
+  // ...
+});
+
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', (socket) => {
+  // WebSocket接続の設定
+  // ...
+
+  socket.on('message', (message) => {
+    console.log('Received message:', message);
+
+    // 応答メッセージを生成
+    const responseMessage = {
+      type: 'text',
+      text: `You sent: ${message}`,
+      timestamp: new Date().toISOString(),
+    };
+
+    // クライアントへメッセージを送信
+    socket.send(JSON.stringify(responseMessage));
   });
-  io.on('connection', (socket) => {
-    // メッセージを受け取った時
-    socket.on('message', (message) => {
-      // 誰から送られたかわかるようにしておく
-      message.from = socket.id;
-      // 全員に送る
-      io.emit('message', message);
-    });
-  });
-} catch (error) {
-  console.log(error, 'eoor');
-}
+});
+
+const port = 8000;
+server.listen(port, () => {
+  console.log(`Listening on port ${port}...`);
+});

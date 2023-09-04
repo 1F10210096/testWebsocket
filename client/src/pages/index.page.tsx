@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useRef, useState } from 'react';
 
 function App() {
   const [message, setMessage] = useState('');
@@ -10,7 +9,8 @@ function App() {
   useEffect(() => {
     // ローカルストリームの取得
     if (!localStream) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
         .then((stream) => {
           setLocalStream(stream);
         })
@@ -20,22 +20,26 @@ function App() {
     }
   }, [localStream]);
 
-  const socket = useRef(io('http://localhost:8000')).current; // レンダリングごとに新しいsocketを作成しないように修正
+  useEffect(() => {
+    // WebSocket接続の設定
+    const socketConnection = new WebSocket('ws://localhost:8000');
+    webSocketRef.current = socketConnection;
 
-  // useEffect(() => {
-  //   // WebSocket接続の設定
-  //   const socketConnection = new WebSocket('ws://localhost:5000');
-  //   webSocketRef.current = socketConnection;
+    socketConnection.addEventListener('message', (event) => {
+      setMessage(event.data);
+    });
 
-  //   socketConnection.addEventListener('message', (event) => {
-  //     setMessage(event.data);
-  //   });
-
-  //   return () => socketConnection.close();
-  // }, []);
+    return () => {
+      if (webSocketRef.current) {
+        webSocketRef.current.close();
+      }
+    };
+  }, []);
 
   const emitTo = (msg: any) => {
-    socket.emit('message', msg);
+    if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
+      webSocketRef.current.send(JSON.stringify(msg));
+    }
   };
 
   const createAnswer = (offer: RTCSessionDescription) => {
@@ -45,7 +49,8 @@ function App() {
     }
 
     const peerConnection = new RTCPeerConnection({ iceServers: [] });
-    
+    console.log('peerConnection', peerConnection);
+
     // ローカルストリームを追加
     localStream.getTracks().forEach((track) => {
       peerConnection.addTrack(track, localStream);
@@ -56,7 +61,7 @@ function App() {
       const stream = event.streams[0];
       // rtc-video要素にストリームを表示
       const recieveVideo = document.getElementById('rtc-video') as HTMLVideoElement | null;
-      console.log("recieveVideo", recieveVideo)
+      console.log('recieveVideo', recieveVideo);
       if (recieveVideo) {
         recieveVideo.srcObject = stream;
       } else {
@@ -71,7 +76,8 @@ function App() {
         emitTo({ type: 'candidate', candidate: evt.candidate });
       } else {
         // 全てのICE candidateが生成されたとき
-        peerConnection.createAnswer()
+        peerConnection
+          .createAnswer()
           .then((answerSDP) => {
             return peerConnection.setLocalDescription(answerSDP);
           })
@@ -86,10 +92,11 @@ function App() {
     };
 
     // リモートオファーをセット
-    peerConnection.setRemoteDescription(offer)
+    peerConnection
+      .setRemoteDescription(offer)
       .then(() => {
         // Answerを生成
-        console.log("peerConnection", peerConnection)
+        console.log('peerConnection', peerConnection);
         return peerConnection.createAnswer();
       })
       .then((answerSDP) => {
@@ -113,21 +120,22 @@ function App() {
     // オファーを生成
     const peerConnection = new RTCPeerConnection({ iceServers: [] });
 
-
     // ローカルストリームを追加
     localStream.getTracks().forEach((track) => {
       peerConnection.addTrack(track, localStream);
     });
 
-    peerConnection.createOffer()
+    peerConnection
+      .createOffer()
       .then((offerSDP) => {
         // ローカルオファーをセット
-        console.log(offerSDP)
+        console.log(offerSDP);
         return peerConnection.setLocalDescription(offerSDP);
       })
       .then(() => {
         // オファーをサーバーに送信
         emitTo({ type: 'offer', sdp: peerConnection.localDescription?.sdp });
+        console.log('d');
       })
       .catch((error) => {
         console.error('Offer SDPの生成またはセットにエラーが発生しました:', error);
@@ -138,7 +146,6 @@ function App() {
     event.preventDefault();
     webSocketRef.current?.send(inputText);
   };
-  
 
   return (
     <>
