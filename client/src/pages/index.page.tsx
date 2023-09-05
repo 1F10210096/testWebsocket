@@ -1,6 +1,5 @@
 import {
   nowInSec,
-  RemoteVideoStream,
   SkyWayAuthToken,
   SkyWayContext,
   SkyWayRoom,
@@ -57,31 +56,42 @@ const token = new SkyWayAuthToken({
   const localVideo = document.getElementById('local-video') as HTMLVideoElement;
   const buttonArea = document.getElementById('button-area');
   const remoteMediaArea = document.getElementById('remote-media-area');
-  const roomNameInput = document.getElementById(
-    'room-name'
+  const channelNameInput = document.getElementById(
+    'channel-name'
+  ) as HTMLInputElement;
+  const dataStreamInput = document.getElementById(
+    'data-stream'
   ) as HTMLInputElement;
   const myId = document.getElementById('my-id');
   const joinButton = document.getElementById('join');
+  const writeButton = document.getElementById('write');
 
   const { audio, video } =
     await SkyWayStreamFactory.createMicrophoneAudioAndCameraStream();
   video.attach(localVideo);
   await localVideo.play();
 
+  const data = await SkyWayStreamFactory.createDataStream();
+  writeButton.onclick = () => {
+    data.write(dataStreamInput.value);
+    dataStreamInput.value = '';
+  };
+
   joinButton.onclick = async () => {
-    if (roomNameInput.value === '') return;
+    if (channelNameInput.value === '') return;
 
     const context = await SkyWayContext.Create(token);
-    const room = await SkyWayRoom.FindOrCreate(context, {
+    const channel = await SkyWayRoom.FindOrCreate(context, {
       type: 'p2p',
-      name: roomNameInput.value,
+      name: channelNameInput.value,
     });
-    const me = await room.join();
+    const me = await channel.join();
 
     myId.textContent = me.id;
 
     await me.publish(audio);
     await me.publish(video);
+    await me.publish(data);
 
     const subscribeAndAttach = (publication) => {
       if (publication.publisher.id === me.id) return;
@@ -91,31 +101,40 @@ const token = new SkyWayAuthToken({
       buttonArea.appendChild(subscribeButton);
 
       subscribeButton.onclick = async () => {
-        const { stream } = await me.subscribe<RemoteVideoStream>(
-          publication.id
-        );
+        const { stream } = await me.subscribe(publication.id);
 
-        let newMedia;
-        switch (stream.track.kind) {
+        switch (stream.contentType) {
           case 'video':
-            newMedia = document.createElement('video');
-            newMedia.playsInline = true;
-            newMedia.autoplay = true;
+            {
+              const elm = document.createElement('video');
+              elm.playsInline = true;
+              elm.autoplay = true;
+              stream.attach(elm);
+              remoteMediaArea.appendChild(elm);
+            }
             break;
           case 'audio':
-            newMedia = document.createElement('audio');
-            newMedia.controls = true;
-            newMedia.autoplay = true;
+            {
+              const elm = document.createElement('audio');
+              elm.controls = true;
+              elm.autoplay = true;
+              stream.attach(elm);
+              remoteMediaArea.appendChild(elm);
+            }
             break;
-          default:
-            return;
+          case 'data': {
+            const elm = document.createElement('div');
+            remoteMediaArea.appendChild(elm);
+            elm.innerText = 'data\n';
+            stream.onData.add((data) => {
+              elm.innerText += (data as string) + '\n';
+            });
+          }
         }
-        stream.attach(newMedia);
-        remoteMediaArea.appendChild(newMedia);
       };
     };
 
-    room.publications.forEach(subscribeAndAttach);
-    room.onStreamPublished.add((e) => subscribeAndAttach(e.publication));
+    channel.publications.forEach(subscribeAndAttach);
+    channel.onStreamPublished.add((e) => subscribeAndAttach(e.publication));
   };
 })();
