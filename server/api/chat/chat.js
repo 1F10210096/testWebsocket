@@ -1,6 +1,5 @@
 import {
   nowInSec,
-  RemoteVideoStream,
   SkyWayAuthToken,
   SkyWayContext,
   SkyWayRoom,
@@ -37,6 +36,7 @@ const token = new SkyWayAuthToken({
               },
             },
           ],
+
           sfuBots: [
             {
               actions: ['write'],
@@ -54,12 +54,11 @@ const token = new SkyWayAuthToken({
 }).encode(secret);
 
 (async () => {
-  const localVideo = document.getElementById('local-video') as HTMLVideoElement;
+  const localVideo = document.getElementById('local-video');
   const buttonArea = document.getElementById('button-area');
   const remoteMediaArea = document.getElementById('remote-media-area');
-  const roomNameInput = document.getElementById(
-    'room-name'
-  ) as HTMLInputElement;
+  const roomNameInput = document.getElementById('room-name');
+
   const myId = document.getElementById('my-id');
   const joinButton = document.getElementById('join');
 
@@ -91,9 +90,7 @@ const token = new SkyWayAuthToken({
       buttonArea.appendChild(subscribeButton);
 
       subscribeButton.onclick = async () => {
-        const { stream } = await me.subscribe<RemoteVideoStream>(
-          publication.id
-        );
+        const { stream } = await me.subscribe(publication.id);
 
         let newMedia;
         switch (stream.track.kind) {
@@ -110,6 +107,7 @@ const token = new SkyWayAuthToken({
           default:
             return;
         }
+
         stream.attach(newMedia);
         remoteMediaArea.appendChild(newMedia);
       };
